@@ -116,24 +116,33 @@ int userial_vendor_open(void)
 		ALOGE("userial vendor open: Unable to open NETLINK socket");
 		return -1;
 	}
+	
+	// Setup no filter
+	memset(&flt, 0, sizeof(flt));
+	memset((void *) &flt.type_mask, 0xff, sizeof(flt.type_mask));
+	memset((void *) &flt.event_mask, 0xff, sizeof(flt.event_mask));
+	if (setsockopt(vnd_netlink.fd, SOL_HCI, HCI_FILTER, &flt, sizeof(flt)) < 0) {
+		ALOGE("userial vendor open: HCI filter setup failed");
+		close(vnd_netlink.fd);
+		return -1;
+	} 
 
-	/* Bind socket to the HCI device */
+	// Bind socket to the HCI device */
 	memset(&a, 0, sizeof(a));
 	a.hci_family = AF_BLUETOOTH;
 	a.hci_dev = vnd_netlink.dev_id;
+	a.hci_channel = HCI_CHANNEL_RAW; 
+	
 	if (bind(vnd_netlink.fd, (struct sockaddr *) &a, sizeof(a)) < 0) {
 		ALOGE("userial vendor open: Unable to bind to open HCI%d device",vnd_netlink.dev_id);
 		close(vnd_netlink.fd);
 		return -1;
 	}
 	
-	/* Setup no filter */
-	memset(&flt, 0, sizeof(flt));
-	if (setsockopt(vnd_netlink.fd, SOL_HCI, HCI_FILTER, &flt, sizeof(flt)) < 0) {
-		ALOGE("userial vendor open: HCI filter setup failed");
-		close(vnd_netlink.fd);
-		return -1;
-	} 
+	/* Set the socket to RAW */
+	if (ioctl(vnd_netlink.fd, HCISETRAW, 1) < 0) {
+        ALOGE("Can't access device");
+    }
 
     ALOGI("device fd = %d open", vnd_netlink.fd);
 
