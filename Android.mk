@@ -14,6 +14,8 @@
 # limitations under the License.
 #
 
+ifeq ($(BOARD_HAVE_BLUETOOTH_HCI),true)
+
 LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
@@ -45,3 +47,4 @@ include $(LOCAL_PATH)/vnd_buildcfg.mk
 
 include $(BUILD_SHARED_LIBRARY)
 
+endif
